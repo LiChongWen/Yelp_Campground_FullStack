@@ -1,0 +1,252 @@
+<% include ../partials/header %>
+
+<!-- <div class="container"> -->
+    <div class="row">
+        <div class="col-md-3">
+            <p class="lead">YelpCamp</p>
+            <div class="list-group">
+                <li class="list-group-item active">Info 1</li>
+                <li class="list-group-item">Info 2</li>
+                <li class="list-group-item">Info 3</li>
+            </div>
+            <div id="map"></div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+                    <img class="img-responsive" src="<%= campground.image %>">
+                    <div class="caption-full">
+                        <h4 class="pull-right">$<%= campground.price %>/night</h4>
+                        <h4><a href=""><%= campground.name %></a></h4>
+                        <p>
+                            <span class="fa fa-star checked"></span>
+                            <span class="fa fa-star <% if (campground.ratings > 1.5) { %> checked <% } %>"></span>
+                            <span class="fa fa-star <% if (campground.ratings > 2.5) { %> checked <% } %>"></span>
+                            <span class="fa fa-star <% if (campground.ratings > 3.5) { %> checked <% } %>"></span>
+                            <span class="fa fa-star <% if (campground.ratings > 4.5) { %> checked <% } %>"></span>
+                            <em>(total reviews: <%= campground.comments.length %>)</em>
+                        </p>
+                        <p>
+                            Current campground ratings: <strong><%= campground.ratings.toFixed(2) %></strong>
+                        </p>
+                        <p><%= campground.description %></p>
+                        <p>
+                           <em>Submitted By <%= campground.author.username %>,</em> 
+                        </p>
+                        <p>
+                            <em><%= moment(campground.createdAt).fromNow() %></em>
+                        </p>
+                        <a class="btn btn-default" href="/campgrounds"><i class="fa fa-arrow-left"></i> Go back</a>
+                        <% if(currentUser && campground.author.id.equals(currentUser._id) || (currentUser && currentUser.isAdmin)){ %>
+                            <a class="btn btn-warning" href="/campgrounds/<%= campground._id %>/edit">Edit</a>
+                            <form id="delete-form" action="/campgrounds/<%= campground._id %>/?_method=DELETE" method="POST">
+                                <button class="btn btn-danger">Delete</button>
+                            </form>
+                        <%}%>
+                        
+                    </div>
+            </div>
+            
+            <!-- Display comment -->
+            <div class="well">
+                <!--Setting up the add new comment button that is used for collapsing-->
+                <div class="text-right">
+                    <a class="btn btn-success pull-right" role="button" data-toggle="collapse" href="#collapseComment" aria-expanded="false" aria-controls="collapseComment">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add new comment</a>
+                </div>
+                <h4><strong>Comments <span class="glyphicon glyphicon glyphicon-comment" aria-hidden="true"></span></strong></h4>
+                
+                <div class="collapse" id="collapseComment">
+                    <div class="well" style="border-left: 5px solid #00C851;">
+                        <% if(!currentUser) { %>
+                            <!--If the user is not logged in, direct him to the login page-->
+                            <h5>You need to login before you can comment. <a href="/login">Click here</a> to go to the login page.</h5>
+                        <% } %>
+                        <% if(currentUser) { %>
+                            <!--If the user is logged in, show the new comment form-->
+                                <h4>Write your comment <span class="glyphicon glyphicon glyphicon-pencil" aria-hidden="true"></span></h4>
+                                <form id="add-comment-form" action="/campgrounds/<%= campground._id %>/comments" method="POST">
+                                <div class="form-group">
+                                <input class="form-control" type="text" disabled value="<%= currentUser.username %>">
+                                </div>
+                                <div class="form-group">
+                                        <label for="rating">Leave a rating:</label>
+                                        <fieldset class="starability-basic form-group" id="rating">
+                                            <div>
+                                                <input type="radio" id="first-rate5" name="comment[rating]" value="5" checked />
+                                                <label for="first-rate5">
+                                                    <%- '<span class="fa fa-star checked"></span>'.repeat(5) %>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input type="radio" id="first-rate4" name="comment[rating]" value="4" />
+                                                <label for="first-rate4">
+                                                    <%- '<span class="fa fa-star checked"></span>'.repeat(4) %>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input type="radio" id="first-rate3" name="comment[rating]" value="3" />
+                                                <label for="first-rate3">
+                                                    <%- '<span class="fa fa-star checked"></span>'.repeat(3) %>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input type="radio" id="first-rate2" name="comment[rating]" value="2" />
+                                                <label for="first-rate2">
+                                                    <%- '<span class="fa fa-star checked"></span>'.repeat(2) %>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <input type="radio" id="first-rate1" name="comment[rating]" value="1" />
+                                                <label for="first-rate1">
+                                                    <%- '<span class="fa fa-star checked"></span>'.repeat(1) %>
+                                                </label>
+                                            </div>
+                                        </fieldset>
+                                </div>
+                                <div class="form-group">
+                                <textarea class="form-control" name="comment[text]" placeholder="Write your comment..." form="add-comment-form" rows="5" cols="70"></textarea>
+                                </div>
+                                <div class="form-group">
+                                <button class="btn btn-success btn-sm">Comment <span class="glyphicon glyphicon-comment" aria-hidden="true"></span></button>
+                                </div>
+                            </form>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <hr>
+
+            <!--Check if there are comments, if there are none say no comments.-->
+            <% if (campground.comments.length === 0) { %>
+                <em style="color: grey;">No comments yet.</em>
+            <% } %>
+            
+            <!--Display comments by looping through them-->
+            <% campground.comments.forEach(function(comment) { %>
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Start author username -->
+                        <strong>
+                            <% if (currentUser && currentUser._id.equals(comment.author.id)) { %>
+                            <!--If the current user owns the comment, change the color of the user icon-->
+                            <span style="color: orange;" class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                            <% } else { %>
+                            <!--Else just display it black-->
+                            <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                            <% } %>
+                            <!--Print out the author username-->
+                            <%= comment.author.username %>
+                        <!-- End author username -->
+                        </strong>
+                         <!--Show when the comment was made-->
+                        <span class="pull-right"><%= moment(comment.createdAt).fromNow() %></span>
+                        <!--Printing the comment-->
+                        <p><%= comment.text %></p>
+
+                        <!--If the visitor is logged in and the owner of the comment, show the edit and delete buttons-->
+                        <% if (currentUser && currentUser._id.equals(comment.author.id)|| (currentUser && currentUser.isAdmin)) { %>
+                            <!--Edit button used for collapsing the edit comment form-->
+                            <a class="btn btn-xs btn-warning" role="button" data-toggle="collapse" href="#collapseEdit<%= comment._id %>" 
+                                aria-expanded="false" aria-controls="collapse<%= comment._id %>">
+                                Edit
+                            </a>
+                            <!--Delete comment button-->
+                            <form id="delete-form" action="/campgrounds/<%= campground._id %>/comments/<%= comment._id %>?_method=DELETE" method="POST" style="display: inline;">
+                                <button class="btn btn-xs btn-danger">Delete</button>
+                            </form>
+                            <div>
+                                <p> </p>
+                            </div>
+
+                            <!--Edit comment form-->
+                            <div class="collapse" id="collapseEdit<%= comment._id %>">
+                                <div class="well" style="border-left: 5px solid #ffbb33; margin-top: 15px;">
+                                    <h4>Edit your comment <span class="glyphicon glyphicon-edit" aria-hidden="true"></span></h4>
+                                    <form id="edit-comment-form<%= comment._id %>" action="/campgrounds/<%= campground._id %>/comments/<%= comment._id %>?_method=PUT" method="POST">
+                                        <div class="form-group">
+                                        <input class="form-control" type="text" disabled value="<%= currentUser.username %>">
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="rating">Leave a rating:</label>
+                                                <fieldset class="starability-basic form-group" id="rating">
+                                                    <div>
+                                                        <input type="radio" id="first-rate5" name="updateComment[rating]" value="5" checked />
+                                                        <label for="first-rate5">
+                                                            <%- '<span class="fa fa-star checked"></span>'.repeat(5) %>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <input type="radio" id="first-rate4" name="updateComment[rating]" value="4" />
+                                                        <label for="first-rate4">
+                                                            <%- '<span class="fa fa-star checked"></span>'.repeat(4) %>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <input type="radio" id="first-rate3" name="updateComment[rating]" value="3" />
+                                                        <label for="first-rate3">
+                                                            <%- '<span class="fa fa-star checked"></span>'.repeat(3) %>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <input type="radio" id="first-rate2" name="updateComment[rating]" value="2" />
+                                                        <label for="first-rate2">
+                                                            <%- '<span class="fa fa-star checked"></span>'.repeat(2) %>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <input type="radio" id="first-rate1" name="updateComment[rating]" value="1" />
+                                                        <label for="first-rate1">
+                                                            <%- '<span class="fa fa-star checked"></span>'.repeat(1) %>
+                                                        </label>
+                                                    </div>
+                                                </fieldset>
+                                        </div>
+                                        <div class="form-group">
+                                        <textarea class="form-control" name="updateComment[text]" placeholder="Your comment text..." form="edit-comment-form<%= comment._id %>" rows="5" cols="70"><%= comment.text %></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                        <button class="btn btn-warning btn-sm">Edit comment <span class="glyphicon glyphicon-comment" aria-hidden="true"></span></button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <!--END Edit comment form-->
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>   
+        </div>
+    </div>
+<!-- </div> -->
+
+<script>
+        function initMap() {
+          var lat = <%= campground.lat %>;
+          var lng = <%= campground.lng %>;
+          var center = {lat: lat, lng: lng };
+          var map = new google.maps.Map(document.getElementById('map'), {
+              zoom: 8,
+              center: center,
+              scrollwheel: false
+          });
+          var contentString = `
+            <strong><%= campground.name %><br />
+            <%= campground.location %></strong>
+            <p><%= campground.description %></p>
+          `
+          var infowindow = new google.maps.InfoWindow({
+            content: contentString
+          });
+          var marker = new google.maps.Marker({
+              position: center,
+              map: map
+          });
+          marker.addListener('click', function() {
+            infowindow.open(map, marker);
+          });
+        }
+      </script>
+      <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAhLfkI-JP8NylSKp_LWBfLqko1Q2_iFG4&callback=initMap"></script>
+
+
+<% include ../partials/footer %>
