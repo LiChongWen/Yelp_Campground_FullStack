@@ -1,7 +1,7 @@
 # Yelp_Campground-FullStack-
 A complete Yelp style Campground rating website with Responsive Web Design
-Visit following link to see deployed version:
-https://gentle-brushlands-84654.herokuapp.com/
+- Visit following link to see deployed version:
+- https://gentle-brushlands-84654.herokuapp.com/
 
 ## Front-end
 (Responsive Web Design)
